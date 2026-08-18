@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConsultBae AI Automation — Audio Collection Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">⚡</div>
+                <div>
+                    <h1>ConsultBae AI Automation</h1>
+                    <p class="subtitle">Audio Collection & Metadata Analytics Portal</p>
+                </div>
+            </div>
+            <nav class="nav-tabs">
+                <button class="tab-btn active" id="tab-collect" onclick="switchTab('collect')">
+                    <span class="tab-icon">🎙️</span> Audio Collection
+                </button>
+                <button class="tab-btn" id="tab-submissions" onclick="switchTab('submissions')">
+                    <span class="tab-icon">📊</span> Submissions List <span class="badge" id="sub-count-badge">0</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content Body -->
+        <main class="main-content">
+            
+            <!-- Alert Banner -->
+            <div id="alert-banner" class="alert-banner hidden"></div>
+
+            <!-- VIEW 1: AUDIO COLLECTION VIEW -->
+            <section id="view-collect" class="view-section active-view">
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <h2>Candidate Voice Recording & Upload</h2>
+                        <p>Select an existing candidate from the verified entity database (60 Golden Persons) to record or upload audio.</p>
+                    </div>
+
+                    <form id="audio-form" onsubmit="handleFormSubmit(event)">
+                        <!-- Candidate Selection -->
+                        <div class="form-group">
+                            <label for="candidate-select">Select Candidate <span class="required">*</span></label>
+                            <div class="select-wrapper">
+                                <select id="candidate-select" required onchange="onCandidateSelect(this.value)">
+                                    <option value="">-- Loading 60 Golden Persons... --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Read-only Info Display -->
+                        <div class="candidate-info-grid hidden" id="candidate-info">
+                            <div class="info-pill">
+                                <span class="info-label">Candidate Name:</span>
+                                <span class="info-val" id="info-name">-</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-label">Primary Phone:</span>
+                                <span class="info-val" id="info-phone">-</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-label">Location:</span>
+                                <span class="info-val" id="info-city">-</span>
+                            </div>
+                        </div>
+
+                        <!-- Recording / File Upload Toggle Tabs -->
+                        <div class="input-method-toggle">
+                            <button type="button" class="method-btn active" id="method-mic" onclick="setMethod('mic')">
+                                🎙️ Record in Browser
+                            </button>
+                            <button type="button" class="method-btn" id="method-file" onclick="setMethod('file')">
+                                📁 Upload Audio File
+                            </button>
+                        </div>
+
+                        <!-- Option A: Browser MediaRecorder -->
+                        <div id="section-mic" class="method-section">
+                            <div class="recorder-box">
+                                <div class="mic-visualizer">
+                                    <div class="pulse-ring" id="pulse-ring"></div>
+                                    <div class="mic-icon" id="mic-icon">🎤</div>
+                                </div>
+                                <div class="timer" id="timer-display">00:00</div>
+                                <div class="recorder-controls">
+                                    <button type="button" class="btn btn-record" id="btn-start-rec" onclick="startRecording()">
+                                        Start Recording
+                                    </button>
+                                    <button type="button" class="btn btn-stop hidden" id="btn-stop-rec" onclick="stopRecording()">
+                                        Stop Recording
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option B: File Upload Fallback -->
+                        <div id="section-file" class="method-section hidden">
+                            <div class="file-upload-box">
+                                <input type="file" id="audio-file-input" accept="audio/*" onchange="onFileSelected(this)">
+                                <label for="audio-file-input" class="file-drop-zone">
+                                    <div class="upload-icon">📤</div>
+                                    <p class="drop-text">Click or drag & drop audio file here</p>
+                                    <p class="file-hint">Supported formats: .wav, .mp3, .m4a, .webm, .ogg</p>
+                                    <div id="selected-filename" class="file-selected-name hidden"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Audio Preview Player -->
+                        <div id="preview-container" class="preview-card hidden">
+                            <h3>Audio Preview Playback</h3>
+                            <audio id="audio-preview" controls class="custom-audio-player"></audio>
+                        </div>
+
+                        <!-- Submit Action -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit" id="btn-submit" disabled>
+                                ⚡ Submit Audio & Extract Metadata
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- VIEW 2: SUBMISSION LIST VIEW -->
+            <section id="view-submissions" class="view-section hidden-view">
+                <!-- Analytics Summary Row -->
+                <div class="analytics-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-label">Total Submissions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-duration">0.0s</div>
+                        <div class="stat-label">Avg Duration</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-loudness">- LUFS</div>
+                        <div class="stat-label">Avg Loudness (LUFS)</div>
+                    </div>
+                </div>
+
+                <!-- Submissions Table Card -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <h2>Submitted Audio Recordings & Extracted Metadata</h2>
+                        <p>Showing candidate identity link, inline audio playback, duration, sample rate, bitrate, and EBU R128 integrated loudness (LUFS).</p>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Candidate Name</th>
+                                    <th>Phone</th>
+                                    <th>City</th>
+                                    <th>Audio Player</th>
+                                    <th>Duration</th>
+                                    <th>Sample Rate</th>
+                                    <th>Bitrate</th>
+                                    <th>Loudness (LUFS)</th>
+                                    <th>Submitted At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissions-tbody">
+                                <tr>
+                                    <td colspan="9" class="empty-table">Loading audio submissions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
