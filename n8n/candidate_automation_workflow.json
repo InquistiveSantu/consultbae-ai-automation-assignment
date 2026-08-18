@@ -1,5 +1,6 @@
 {
   "name": "ConsultBae Candidate Duplicate Check & Alert Automation",
+  "active": true,
   "nodes": [
     {
       "parameters": {
@@ -15,11 +16,12 @@
         300
       ],
       "id": "webhook-node",
-      "name": "Webhook"
+      "name": "Webhook",
+      "webhookId": "candidate-application"
     },
     {
       "parameters": {
-        "jsCode": "// Normalize incoming candidate application attributes\nconst item = $input.item.json;\nconst body = item.body || item;\n\nfunction cleanPhone(ph) {\n  if (!ph) return '';\n  const digits = String(ph).replace(/\\D/g, '');\n  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1);\n  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);\n  return digits;\n}\n\nconst normalizedEmail = (body.email || body.primary_email || '').trim().toLowerCase();\nconst normalizedPhone = cleanPhone(body.phone || body.primary_phone || '');\nconst canonicalName = (body.full_name || body.name || body.canonical_name || '').trim();\n\nreturn {\n  json: {\n    raw_input: body,\n    normalized_email: normalizedEmail,\n    normalized_phone: normalizedPhone,\n    canonical_name: canonicalName,\n    city: body.city || body.canonical_city || '',\n    skills: body.skills || [],\n    experience_years: body.experience_years || 0\n  }\n};"
+        "jsCode": "// Normalize incoming candidate application attributes\nconst item = $input.item.json;\nconst body = item.body || item;\n\nfunction cleanPhone(ph) {\n  if (!ph) return '';\n  const digits = String(ph).replace(/\\D/g, '');\n  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1);\n  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);\n  return digits;\n}\n\nconst normalizedEmail = (body.email || body.primary_email || '').trim().toLowerCase();\nconst normalizedPhone = cleanPhone(body.phone || body.primary_phone || '');\nconst canonicalName = (body.full_name || body.name || body.canonical_name || '').trim();\n\nreturn {\n  json: {\n    raw_input: body,\n    normalized_email: normalizedEmail,\n    normalized_phone: normalizedPhone,\n    canonical_name: canonicalName,\n    city: body.city || body.canonical_city || '',\n    skills: body.skills || [],\n    experience_years: body.experience_years || 0\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -38,21 +40,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        320,
-        500
+        540,
+        300
       ],
       "id": "http-get-candidates",
       "name": "HTTP Request"
     },
     {
       "parameters": {
-        "jsCode": "// Cross-check normalized candidate against 60 Golden Persons database candidates\nconst normalizedInput = $(\"Code in JavaScript\").first().json;\nconst candidatesList = $(\"HTTP Request\").all().map(i => i.json);\n\nlet matchedCandidate = null;\nlet matchReason = '';\n\nfor (const cand of candidatesList) {\n  const dbEmail = (cand.primary_email || '').trim().toLowerCase();\n  const dbPhone = String(cand.primary_phone || '').replace(/\\D/g, '');\n  \n  if (normalizedInput.normalized_email && dbEmail && dbEmail === normalizedInput.normalized_email) {\n    matchedCandidate = cand;\n    matchReason = `Exact Email Match (${dbEmail})`;\n    break;\n  }\n  if (normalizedInput.normalized_phone && dbPhone && dbPhone === normalizedInput.normalized_phone) {\n    matchedCandidate = cand;\n    matchReason = `Exact Phone Match (${dbPhone})`;\n    break;\n  }\n}\n\nconst isDuplicate = !!matchedCandidate;\n\nreturn {\n  json: {\n    isDuplicate: isDuplicate,\n    matchReason: matchReason,\n    candidate_name: normalizedInput.canonical_name,\n    email: normalizedInput.normalized_email,\n    phone: normalizedInput.normalized_phone,\n    existing_person_id: matchedCandidate ? matchedCandidate.id : null,\n    matched_person_name: matchedCandidate ? matchedCandidate.canonical_name : null,\n    status: isDuplicate ? 'DUPLICATE_ALERT' : 'NEW_CANDIDATE'\n  }\n};"
+        "jsCode": "// Cross-check normalized candidate against Golden Persons database candidates\nconst normalizedInput = $(\"Code in JavaScript\").first().json;\nconst rawCandidates = $(\"HTTP Request\").all();\n\nlet candidatesList = [];\nif (Array.isArray(rawCandidates) && rawCandidates.length > 0) {\n  if (Array.isArray(rawCandidates[0].json)) {\n    candidatesList = rawCandidates[0].json;\n  } else {\n    candidatesList = rawCandidates.map(i => i.json);\n  }\n}\n\nlet matchedCandidate = null;\nlet matchReason = '';\n\nfor (const cand of candidatesList) {\n  const dbEmail = (cand.primary_email || '').trim().toLowerCase();\n  const dbPhone = String(cand.primary_phone || '').replace(/\\D/g, '');\n  \n  if (normalizedInput.normalized_email && dbEmail && dbEmail === normalizedInput.normalized_email) {\n    matchedCandidate = cand;\n    matchReason = `Exact Email Match (${dbEmail})`;\n    break;\n  }\n  if (normalizedInput.normalized_phone && dbPhone && dbPhone === normalizedInput.normalized_phone) {\n    matchedCandidate = cand;\n    matchReason = `Exact Phone Match (${dbPhone})`;\n    break;\n  }\n}\n\nconst isDuplicate = !!matchedCandidate;\n\nreturn {\n  json: {\n    isDuplicate: isDuplicate,\n    matchReason: matchReason,\n    candidate_name: normalizedInput.canonical_name,\n    email: normalizedInput.normalized_email,\n    phone: normalizedInput.normalized_phone,\n    city: normalizedInput.city,\n    skills: normalizedInput.skills,\n    experience_years: normalizedInput.experience_years,\n    existing_person_id: matchedCandidate ? matchedCandidate.id : null,\n    matched_person_name: matchedCandidate ? matchedCandidate.canonical_name : null,\n    status: isDuplicate ? 'DUPLICATE_ALERT' : 'NEW_CANDIDATE'\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        560,
-        400
+        760,
+        300
       ],
       "id": "code-cross-check",
       "name": "Code in JavaScript1"
@@ -60,19 +62,30 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "value1": "={{ $json.isDuplicate }}",
-              "value2": true
+              "id": "is_dup_check",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
+      "typeVersion": 2.2,
       "position": [
-        780,
-        400
+        980,
+        300
       ],
       "id": "if-node",
       "name": "If"
@@ -88,9 +101,9 @@
               "type": "string"
             },
             {
-              "id": "message",
+              "id": "alert_message",
               "name": "alert_message",
-              "value": "=⚠️ DUPLICATE ALERT: Candidate {{ $json.candidate_name }} already exists in database as Golden Entity {{ $json.existing_person_id }} ({{ $json.matched_person_name }}) via {{ $json.matchReason }}.",
+              "value": "=\u26a0\ufe0f DUPLICATE ALERT: Candidate {{ $json.candidate_name }} already exists in database as Golden Entity {{ $json.existing_person_id }} ({{ $json.matched_person_name }}) via {{ $json.matchReason }}.",
               "type": "string"
             },
             {
@@ -101,13 +114,15 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "includeOtherFields": true
+        }
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1000,
-        300
+        1200,
+        200
       ],
       "id": "edit-fields-true",
       "name": "Edit Fields"
@@ -123,9 +138,9 @@
               "type": "string"
             },
             {
-              "id": "message",
+              "id": "alert_message",
               "name": "alert_message",
-              "value": "=✅ NEW CANDIDATE: Candidate {{ $json.candidate_name }} ({{ $json.email }}) is unique and ready for ingestion.",
+              "value": "=\u2705 NEW CANDIDATE: Candidate {{ $json.candidate_name }} ({{ $json.email }}) is unique and ready for ingestion.",
               "type": "string"
             },
             {
@@ -136,13 +151,15 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "includeOtherFields": true
+        }
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1000,
-        500
+        1200,
+        400
       ],
       "id": "edit-fields-false",
       "name": "Edit Fields1"
@@ -154,8 +171,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        1220,
-        400
+        1420,
+        300
       ],
       "id": "merge-node",
       "name": "Merge"
@@ -167,8 +184,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1440,
-        400
+        1640,
+        300
       ],
       "id": "respond-webhook",
       "name": "Respond to Webhook"
@@ -190,7 +207,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
