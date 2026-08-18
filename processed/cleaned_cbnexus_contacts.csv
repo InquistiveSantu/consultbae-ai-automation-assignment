@@ -1,0 +1,31 @@
+source_id,raw_name,normalized_name,raw_phone_number,normalized_phone,raw_city,normalized_city,raw_verified,normalized_verified,projects_completed
+S3_R2,Rohit Nair,Rohit Nair,9000000268,9000000268,Gurgaon,Gurugram,Y,TRUE,13
+S3_R3,RITU SHARMA,Ritu Sharma,9000000146,9000000146,Noida ,Noida,yes,TRUE,15
+S3_R4,Priya Saxena,Priya Saxena,919000000231,9000000231,New Delhi,Delhi NCR,No,FALSE,12
+S3_R5,Arjun Mehta,Arjun Mehta,+91-9000000131,9000000131,Noida,Noida,No,FALSE,9
+S3_R6,Nikhil Mehta,Nikhil Mehta,+91-9000000104,9000000104,pune,Pune,Y,TRUE,10
+S3_R7,RAHUL MALHOTRA,Rahul Malhotra,919000000260,9000000260,Delhi NCR,Delhi NCR,No,FALSE,4
+S3_R8,Deepak Mehta,Deepak Mehta,9000000116,9000000116,Noida,Noida,yes,TRUE,11
+S3_R9,SAHIL MALHOTRA,Sahil Malhotra,9000000143,9000000143,Noida,Noida,N,FALSE,0
+S3_R10,Shreya Gupta,Shreya Gupta,+91-9000000227,9000000227,NOIDA,Noida,yes,TRUE,13
+S3_R11,Priya Singh,Priya Singh,9000000287,9000000287,gurugram ,Gurugram,Y,TRUE,3
+S3_R12,Varun Jain,Varun Jain,919000000263,9000000263,Pune,Pune,yes,TRUE,14
+S3_R13,Tanvi Agarwal,Tanvi Agarwal,919000000148,9000000148,Pune,Pune,N,FALSE,3
+S3_R14,KARAN BHATIA,Karan Bhatia,9000000211,9000000211,NOIDA,Noida,yes,TRUE,2
+S3_R15,Arjun Mishra,Arjun Mishra,919000000106,9000000106,new delhi,Delhi NCR,No,FALSE,10
+S3_R17,Isha Kapoor,Isha Kapoor,+91-9000000295,9000000295,New Delhi,Delhi NCR,yes,TRUE,6
+S3_R18,Isha Chopra,Isha Chopra,919000000138,9000000138,pune,Pune,No,FALSE,7
+S3_R19,MEERA BHATIA,Meera Bhatia,919000000223,9000000223,Delhi,Delhi NCR,No,FALSE,4
+S3_R20,Vikram Saxena,Vikram Saxena,9000000113,9000000113,Gurgaon,Gurugram,No,FALSE,15
+S3_R21,Rahul Chopra,Rahul Chopra,9000000137,9000000137,Noida ,Noida,N,FALSE,10
+S3_R22,Tanvi Gupta,Tanvi Gupta,9000000254,9000000254,Bengaluru,Bengaluru,No,FALSE,14
+S3_R23,VARUN SAXENA,Varun Saxena,919000000170,9000000170,GURGAON,Gurugram,Y,TRUE,1
+S3_R24,Sneha Chopra,Sneha Chopra,+91-9000000162,9000000162,pune,Pune,N,FALSE,14
+S3_R25,DEEPAK NAIR,Deepak Nair,919000000296,9000000296,Bengaluru,Bengaluru,Yes,TRUE,2
+S3_R26,Gaurav Mehta,Gaurav Mehta,9000000133,9000000133,Bengaluru,Bengaluru,N,FALSE,1
+S3_R27,Neha Bhatia,Neha Bhatia,9000000273,9000000273,PUNE,Pune,No,FALSE,10
+S3_R28,Arjun Mehta,Arjun Mehta,9000000272,9000000272,Noida,Noida,Yes,TRUE,14
+S3_R29,MANISH BHATIA,Manish Bhatia,919000000161,9000000161,Noida ,Noida,Yes,TRUE,5
+S3_R30,DIVYA CHOPRA,Divya Chopra,9000000111,9000000111,NOIDA,Noida,N,FALSE,5
+S3_R31,Karan Chopra,Karan Chopra,919000000245,9000000245,pune,Pune,N,FALSE,10
+S3_R32,Vikram Mehta,Vikram Mehta,+91-9000000261,9000000261,PUNE,Pune,Y,TRUE,2
