@@ -1,0 +1,277 @@
+{
+  "name": "ConsultBae Candidate Duplicate Check & Alert Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "candidate-application",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ],
+      "id": "webhook-node",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize incoming candidate application attributes\nconst item = $input.item.json;\nconst body = item.body || item;\n\nfunction cleanPhone(ph) {\n  if (!ph) return '';\n  const digits = String(ph).replace(/\\D/g, '');\n  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1);\n  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);\n  return digits;\n}\n\nconst normalizedEmail = (body.email || body.primary_email || '').trim().toLowerCase();\nconst normalizedPhone = cleanPhone(body.phone || body.primary_phone || '');\nconst canonicalName = (body.full_name || body.name || body.canonical_name || '').trim();\n\nreturn {\n  json: {\n    raw_input: body,\n    normalized_email: normalizedEmail,\n    normalized_phone: normalizedPhone,\n    canonical_name: canonicalName,\n    city: body.city || body.canonical_city || '',\n    skills: body.skills || [],\n    experience_years: body.experience_years || 0\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        300
+      ],
+      "id": "code-normalize",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/api/candidates",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        500
+      ],
+      "id": "http-get-candidates",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cross-check normalized candidate against 60 Golden Persons database candidates\nconst normalizedInput = $(\"Code in JavaScript\").first().json;\nconst candidatesList = $(\"HTTP Request\").all().map(i => i.json);\n\nlet matchedCandidate = null;\nlet matchReason = '';\n\nfor (const cand of candidatesList) {\n  const dbEmail = (cand.primary_email || '').trim().toLowerCase();\n  const dbPhone = String(cand.primary_phone || '').replace(/\\D/g, '');\n  \n  if (normalizedInput.normalized_email && dbEmail && dbEmail === normalizedInput.normalized_email) {\n    matchedCandidate = cand;\n    matchReason = `Exact Email Match (${dbEmail})`;\n    break;\n  }\n  if (normalizedInput.normalized_phone && dbPhone && dbPhone === normalizedInput.normalized_phone) {\n    matchedCandidate = cand;\n    matchReason = `Exact Phone Match (${dbPhone})`;\n    break;\n  }\n}\n\nconst isDuplicate = !!matchedCandidate;\n\nreturn {\n  json: {\n    isDuplicate: isDuplicate,\n    matchReason: matchReason,\n    candidate_name: normalizedInput.canonical_name,\n    email: normalizedInput.normalized_email,\n    phone: normalizedInput.normalized_phone,\n    existing_person_id: matchedCandidate ? matchedCandidate.id : null,\n    matched_person_name: matchedCandidate ? matchedCandidate.canonical_name : null,\n    status: isDuplicate ? 'DUPLICATE_ALERT' : 'NEW_CANDIDATE'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        400
+      ],
+      "id": "code-cross-check",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isDuplicate }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        780,
+        400
+      ],
+      "id": "if-node",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "alert_type",
+              "name": "alert_type",
+              "value": "DUPLICATE_FOUND_ALERT",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "alert_message",
+              "value": "=⚠️ DUPLICATE ALERT: Candidate {{ $json.candidate_name }} already exists in database as Golden Entity {{ $json.existing_person_id }} ({{ $json.matched_person_name }}) via {{ $json.matchReason }}.",
+              "type": "string"
+            },
+            {
+              "id": "action_required",
+              "name": "action_required",
+              "value": "=Merge source details into existing record {{ $json.existing_person_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        300
+      ],
+      "id": "edit-fields-true",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "alert_type",
+              "name": "alert_type",
+              "value": "NEW_CANDIDATE_RECORD",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "alert_message",
+              "value": "=✅ NEW CANDIDATE: Candidate {{ $json.candidate_name }} ({{ $json.email }}) is unique and ready for ingestion.",
+              "type": "string"
+            },
+            {
+              "id": "action_required",
+              "name": "action_required",
+              "value": "Create new Golden Person profile",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        500
+      ],
+      "id": "edit-fields-false",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1220,
+        400
+      ],
+      "id": "merge-node",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1440,
+        400
+      ],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
